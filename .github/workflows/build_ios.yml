@@ -1,38 +1,62 @@
-name: Build iOS IPA (Flutter)
+name: Flutter iOS Build
 
+# Controls when the workflow will run
 on:
-  workflow_dispatch: # allows manual run
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
+    paths:
+      - '**.dart'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build_ios.yml'
+  pull_request:
+    branches: [ "main", "master" ]
+    paths:
+      - '**.dart'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build_ios.yml'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build-ios:
-    name: Build iOS App
-    runs-on: macos-latest   # important: must use macOS to build iOS apps
+  build_ios:
+    # The type of runner that the job will run on
+    runs-on: macos-latest # macOS is required for iOS builds
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # 1. Checks-out your repository under $GITHUB_WORKSPACE, so the job can access it
+      - uses: actions/checkout@v4
 
-      # Step 2: Setup Flutter SDK
-      - name: Setup Flutter
+      # 2. Setup the Flutter environment
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'   # use your flutter version
+          # Using a stable version compatible with your Dart SDK ^3.9.2
+          flutter-version: '3.35.7' 
           channel: 'stable'
+          cache: true
 
-      # Step 3: Install dependencies
-      - name: Install dependencies
+      # 3. Get dependencies
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      # Step 4: Build IPA
-      - name: Build iOS release
-        run: flutter build ipa --release
+      # 4. Enable support for iOS (usually not strictly necessary if project is already set up)
+      # - name: Enable iOS platform (optional)
+      #   run: flutter config --enable-ios
 
-      # Step 5: Upload IPA artifact
-      - name: Upload IPA
+      # 5. Build the iOS application (IPA)
+      - name: Build Flutter iOS (Release)
+        run: flutter build ipa --release
+        # Optional: Specify a target simulator for testing if not building IPA
+        # run: flutter build ios --simulator
+
+      # 6. Archive the build output (the IPA file)
+      - name: Archive Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build
-          path: build/ios/ipa/
+          name: ios-build-ipa # Name of the artifact
+          # The IPA is located in build/ios/ipa/
+          path: build/ios/ipa/*.ipa 
+          retention-days: 5
